@@ -11,8 +11,11 @@ library(terra)
 # Cycles, 28, 211–222, doi:10.1002/2013GB004665.
 
 # hex grid
+
 bf <- read_sf("~/hexburdb/map/hex_grid.gpkg")
-# read clay, top and s
+
+# read clay, silt and sand data (topsoil)
+
 t_clay <- rast(x = "HWSD_1247/data/T_CLAY.nc4")
 
 t_clay_hex <- terra::extract(
@@ -24,18 +27,6 @@ t_clay_hex <- terra::extract(
   as_tibble() %>% 
   `names<-`(c("hex_id","t_clay_perc"))
   
-
-t_clay <- rast(x = "HWSD_1247/data/T_CLAY.nc4")
-
-t_clay_hex <- terra::extract(
-  x = t_clay,
-  y = bf,
-  fun = "mean",
-  bind = TRUE
-) %>% 
-  as_tibble() %>% 
-  `names<-`(c("hex_id","t_clay_perc"))
-
 t_silt <- rast(x = "HWSD_1247/data/T_SILT.nc4")
 
 t_silt_hex <- terra::extract(
@@ -47,8 +38,6 @@ t_silt_hex <- terra::extract(
   as_tibble() %>% 
   `names<-`(c("hex_id","t_silt_perc"))
   
-t_silt_hex
-
 t_sand <- rast(x = "HWSD_1247/data/T_SAND.nc4")
 
 t_sand_hex <- terra::extract(
@@ -59,8 +48,6 @@ t_sand_hex <- terra::extract(
 ) %>% 
   as_tibble() %>% 
   `names<-`(c("hex_id","t_sand_perc"))
-  
-t_sand_hex
 
 .l <- list(
   t_sand_hex,
@@ -71,7 +58,6 @@ t_sand_hex
 soil_properties <- reduce(
   .x = .l,
   .f = left_join
-  
 )
 
 soil_properties %>% 
@@ -79,24 +65,3 @@ soil_properties %>%
             col_names = TRUE,
             quote = "none"
             )
- 
-
-# soil af permanent wilting point (volumetric percent vperc)
- pwp <- geodata::soil_af_water(
-   "pwp",
-   depth = "30cm",
-   path = "geodata/soilafwater"
- )
-bf <- read_sf("~/hexburdb/map/hex_grid.gpkg")
-pwp_hex <- terra::extract(
-  x = pwp,
-  y = bf ,
-  fun ="mean",
-  bind = TRUE
-) %>% 
-  as_tibble() %>% 
-  `names<-`(c("hex_id","pwp_30cm_vperc"))
-
-
-
- 
