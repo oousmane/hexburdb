@@ -26,11 +26,7 @@ hwsd_hex <- terra::extract(
   fun = .get_mode,
   bind = TRUE
 ) %>% 
-  as_tibble()  %>% 
-  mutate_if(
-    is.double,
-    .funs = num_to_usda
-  )
+  as_tibble() 
   
  
   write_csv(hwsd_hex,file = "data/soil/soil_properties.csv",
