@@ -3,65 +3,37 @@ library(tidyverse)
 library(sf)
 library(terra)
 
-# Soil data gathering and processing.
-# Original data files are from Regridded Harmonized World Soil Database v1.2
-# link : https://daac.ornl.gov/SOILS/guides/HWSD.html
-# reference paper : Wieder, W.R., J. Boehnert, and G.B. Bonan. (2014).
-#  Evaluating soil biogeochemistry parameterizations in Earth system models with observations, Global Biogeochem. 
-# Cycles, 28, 211–222, doi:10.1002/2013GB004665.
-
+source("functions/compute-usda.R")
 # hex grid
 
 bf <- read_sf("~/hexburdb/map/hex_grid.gpkg")
 
-# read clay, silt and sand data (topsoil)
+# soil types for D1 to D6
 
-t_clay <- rast(x = "HWSD_1247/data/T_CLAY.nc4")
+hwsd <- rast(x = "hwsd_bf_usda_first_6_layers.tif")
 
-t_clay_hex <- terra::extract(
-  x = t_clay,
+.get_mode <- function(x,na.rm =TRUE) {
+  u <- unique(x)
+  tab <- tabulate(match(x, u))
+  m <- u[tab == max(tab,na.rm = na.rm)]
+  # m <- as.character(m)
+  if (length(m)>1L) m <- m[1]
+  return(m)
+}
+hwsd_hex <- terra::extract(
+  x = hwsd,
   y = bf,
-  fun = "mean",
+  fun = .get_mode,
   bind = TRUE
 ) %>% 
-  as_tibble() %>% 
-  `names<-`(c("hex_id","t_clay_perc"))
+  as_tibble()  %>% 
+  mutate_if(
+    is.double,
+    .funs = num_to_usda
+  )
   
-t_silt <- rast(x = "HWSD_1247/data/T_SILT.nc4")
-
-t_silt_hex <- terra::extract(
-  x = t_silt,
-  y = bf,
-  fun = "mean",
-  bind = TRUE
-) %>% 
-  as_tibble() %>% 
-  `names<-`(c("hex_id","t_silt_perc"))
-  
-t_sand <- rast(x = "HWSD_1247/data/T_SAND.nc4")
-
-t_sand_hex <- terra::extract(
-  x = t_sand,
-  y = bf,
-  fun = "mean",
-  bind = TRUE
-) %>% 
-  as_tibble() %>% 
-  `names<-`(c("hex_id","t_sand_perc"))
-
-.l <- list(
-  t_sand_hex,
-  t_silt_hex,
-  t_clay_hex
-)
-
-soil_properties <- reduce(
-  .x = .l,
-  .f = left_join
-)
-
-soil_properties %>% 
-  write_csv(file = "data/soil/soil_properties.csv",
+ 
+  write_csv(hwsd_hex,file = "data/soil/soil_properties.csv",
             col_names = TRUE,
             quote = "none"
             )
